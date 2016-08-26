@@ -8,7 +8,7 @@
 package main
 
 import (
-	"git.ibbd.net/dsp/go-tools/logfile"
+	"github.com/ibbd-dev/go-tools/logfile"
 )
 
 func main() {

@@ -10,7 +10,7 @@
 ```go
 package main
 
-import "git.ibbd.net/dsp/go-tools/idGenerate"
+import "github.com/ibbd-dev/go-tools/idGenerate"
 
 func main() {
     var bid_id string = idGenerate.NextId()
