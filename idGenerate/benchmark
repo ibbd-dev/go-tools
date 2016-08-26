@@ -1,0 +1,7 @@
+#!/bin/bash
+# 
+# 性能测试
+# Author: 
+# Created Time: 2016年08月20日 星期六 10时27分56秒
+
+go test -test.bench=".*"

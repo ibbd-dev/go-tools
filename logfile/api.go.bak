@@ -1,0 +1,129 @@
+package logfile
+
+import (
+	"git.ibbd.net/dsp/go-config"
+	"os"
+	"time"
+	"encoding/json"
+	"log"
+)
+
+var Rf = &Logfile{
+	Filename: goConfig.PathAppRuntimeLog,
+	Level:    LEVEL_INFO,
+}
+
+var Df = &Logfile{
+	Filename: goConfig.PathEventDataLog,
+}
+
+func init() {
+	curr_minute := time.Now().Format("200601021504")
+	var err error
+
+	if _, check := os.Stat(Rf.Filename + "." + curr_minute); os.IsNotExist(check) {
+		if Rf.f, err = os.Create(Rf.Filename + "." + curr_minute); err != nil {
+			panic(err)
+		}
+		Rf.last_minute = curr_minute
+		if Rf.logger != nil {
+			Rf.logger.SetOutput(Rf.f)
+		} else {
+			Rf.logger = log.New(Rf.f, "", log.LstdFlags)
+		}
+	} else {
+		Rf.f, err = os.OpenFile(Rf.Filename + "." + curr_minute, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if _, check := os.Stat(Df.Filename + "." + curr_minute); os.IsNotExist(check) {
+		if Df.f, err = os.Create(Df.Filename + "." + curr_minute); err != nil {
+			panic(err)
+		}
+		Df.last_minute = curr_minute
+		if Df.logger != nil {
+			Df.logger.SetOutput(Df.f)
+		} else {
+			Df.logger = log.New(Df.f, "", 0)
+		}
+	} else {
+		Df.f, err = os.OpenFile(Df.Filename + "." + curr_minute, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func WriteRunLog(msg string, log_level Priority) error {
+	curr_minute := time.Now().Format("200601021504")
+	// 组成新的文件名:给文件名加上分钟数的后缀
+	Rf.log_filename = Rf.Filename + "." + curr_minute
+
+	if log_level < Rf.Level && log_level <= LEVEL_ALL && log_level >= LEVEL_OFF {
+		return nil
+	}
+
+	Rf.write_mutex.Lock()
+	//如果文件不存在
+	if curr_minute != Rf.last_minute {
+		var err error
+		Rf.Close()
+		Rf.f, err = os.Create(Rf.log_filename)
+		if err != nil {
+			return err
+		}
+		Rf.last_minute = curr_minute
+		if Rf.logger != nil {
+			Rf.logger.SetOutput(Rf.f)
+		} else {
+			Rf.logger = log.New(Rf.f, "", log.LstdFlags)
+		}
+	}
+
+	new_msg := "[" + level_title[log_level] + "]" + " " + msg
+	//写文件日志
+	Rf.logger.Println(new_msg)
+	Rf.write_mutex.Unlock()
+	return nil
+}
+
+func WriteDataLog(data_type string, data interface{}) error {
+	curr_minute := time.Now().Format("200601021504")
+	// 组成新的文件名:给文件名加上分钟数的后缀
+	Df.log_filename = Df.Filename + "." + curr_minute
+
+	Df.write_mutex.Lock()
+	//如果文件不存在
+	if curr_minute != Df.last_minute {
+		var err error
+		Df.Close()
+		Df.f, err = os.Create(Df.log_filename)
+		if err != nil {
+			return err
+		}
+		Df.last_minute = curr_minute
+		if Df.logger != nil {
+			Df.logger.SetOutput(Df.f)
+		} else {
+			Df.logger = log.New(Df.f, "", 0)
+		}
+	}
+
+	pack_data := &JsonData{
+		Time: time.Now(),
+		Type: data_type,
+		Data: data,
+	}
+
+	bts, err := json.Marshal(pack_data)
+	if err != nil {
+		return err
+	}
+
+	//写文件日志
+	Df.logger.Println(string(bts))
+	Df.write_mutex.Unlock()
+	return nil
+}
