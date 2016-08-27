@@ -2,12 +2,12 @@
 
 ## 基础工具库
 
-`go-tools`
+- `funcs`: 常用函数集合
+- `crypt`: AES加解密
+- `idGenerate`: 全局ID生成器
+- `logfile`: 日志功能封装
+- `timer`: 简易定时器
 
-## AES加解密
-
-```go
-import "github.com/ibbd-dev/go-tools/crypt"
-```
+说明: 目录名中含test后缀的都只是测试用的.
 
 

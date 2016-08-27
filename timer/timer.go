@@ -4,15 +4,17 @@ import (
 	"time"
 )
 
+// 任务对象结构
 type Entry struct {
-	cmd      func()
-	duration time.Duration
-	time     time.Time
+	cmd      func()        // 任务函数
+	time     time.Time     // 任务上次执行时间
+	duration time.Duration // 任务执行的时间间隔
 }
 
 // 标识任务队列是否已经在运行中
 var is_running = false
 
+// 任务队列
 var tasks map[int]*Entry
 
 func init() {
@@ -33,6 +35,7 @@ func AddFunc(cmd func(), duration time.Duration) {
 // 注意: 精度不是很高, 可能会有1秒的延迟, 通常够用
 func Start() {
 	if is_running {
+		// 正在运行, 不需要再启动
 		return
 	}
 	is_running = true
