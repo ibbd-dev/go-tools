@@ -52,7 +52,12 @@ func hmac_sha1(t *testing.T, plain_text, ekey, ikey, encrypt_text string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	//decrypt_text, err := crypto.Decrypt(unbase64_text)
 	decrypt_text, err := crypto.Decrypt(unbase64_text)
+	decrypt_text2, err := crypto.Decrypt2(unbase64_text)
+	if string(decrypt_text) == string(decrypt_text2) {
+		fmt.Println("=======")
+	}
 	if err != nil {
 		fmt.Println(decrypt_text)
 		t.Fatal(err)

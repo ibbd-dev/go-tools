@@ -90,8 +90,33 @@ func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
 
 	computedSignature := mac_sign[0:SIGNATURE_SIZE]
 	signature := ciphertext[ciphertext_end:ciphertext_len]
-	if hmac.Equal(computedSignature, signature) {
+	if !hmac.Equal(computedSignature, signature) {
 		return plaintext, errors.New("computedSignature != signature")
+	}
+
+	return plaintext, nil
+}
+
+func (c *Crypto) Decrypt2(ciphertext []byte) ([]byte, error) {
+	ciphertext_len := len(ciphertext)
+	ciphertext_end := ciphertext_len - SIGNATURE_SIZE
+	plaintext_len := ciphertext_end - INITIALIZATION_VECTOR_SIZE
+
+	iv, ciphertext, sig := ciphertext[0:INITIALIZATION_VECTOR_SIZE], ciphertext[INITIALIZATION_VECTOR_SIZE:ciphertext_end], ciphertext[ciphertext_end:ciphertext_len]
+
+	var plaintext []byte = make([]byte, plaintext_len)
+	mac := hmac.New(sha1.New, c.EKey)
+	pad := mac.Sum(iv)
+	for i := 0; i < plaintext_len; i++ {
+		plaintext[i] = byte(ciphertext[i] ^ pad[i])
+	}
+
+	mac = hmac.New(sha1.New, c.IKey)
+	mac.Write(plaintext)
+	conf_sig := mac.Sum(iv)
+
+	if !hmac.Equal(sig, conf_sig) {
+		return plaintext, errors.New("sig != conf_sig")
 	}
 
 	return plaintext, nil
