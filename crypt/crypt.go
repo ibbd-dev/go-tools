@@ -9,7 +9,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"errors"
 )
 
 var (
@@ -24,7 +23,7 @@ func Init(key_str string) {
 	key = []byte(key_str)
 	block, err = aes.NewCipher(key)
 	if err != nil {
-		panic(errors.New("in crypt in init"))
+		panic(err)
 	}
 
 	blockSize = block.BlockSize()
