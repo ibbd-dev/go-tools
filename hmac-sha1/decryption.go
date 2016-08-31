@@ -34,10 +34,21 @@ const (
 type Crypto struct {
 	EKey []byte
 	IKey []byte
+
+	// 加解密算法的new函数, 例如sha1.New
+	algo_new func() hash.Hash
+}
+
+func (c *Crypto) SetNew(algo_new func() hash.Hash) {
+	c.algo_new = algo_new
 }
 
 // {initialization_vector (16 bytes)}{ciphertext}{integrity (4 bytes)}
 func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
+	if c.algo_new == nil {
+		c.algo_new = sha1.New
+	}
+
 	// Step 1. find the length of initialization vector and clear text.
 	ciphertext_len := len(ciphertext)
 	ciphertext_end := ciphertext_len - SIGNATURE_SIZE
@@ -54,7 +65,7 @@ func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
 
 	var mac hash.Hash
 	for ciphertext_begin, plaintext_begin := INITIALIZATION_VECTOR_SIZE, 0; ciphertext_begin < ciphertext_end; {
-		mac = hmac.New(sha1.New, c.EKey)
+		mac = hmac.New(c.algo_new, c.EKey)
 		mac.Write(iv)
 		pad := mac.Sum(nil)
 
@@ -81,16 +92,21 @@ func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
 	// followed by initialization vector, which is stored in the 1st
 	// section
 	// or ciphertext.
-	mac = hmac.New(sha1.New, c.IKey)
+	sign := ciphertext[ciphertext_end:ciphertext_len]
+	computed_sign := c.calSign(plaintext, ciphertext)
+	if hmac.Equal(computed_sign, sign) {
+		return plaintext, nil
+	}
+
+	return nil, errors.New("computedSignature != signature")
+}
+
+// 计算签名
+func (c *Crypto) calSign(plaintext, ciphertext []byte) []byte {
+	mac := hmac.New(c.algo_new, c.IKey)
 	mac.Write(plaintext)
 	mac.Write(ciphertext[:INITIALIZATION_VECTOR_SIZE])
 	mac_sign := mac.Sum(nil)
 
-	computed_sign := mac_sign[:SIGNATURE_SIZE]
-	sign := ciphertext[ciphertext_end:ciphertext_len]
-	if !hmac.Equal(computed_sign, sign) {
-		return plaintext, errors.New("computedSignature != signature")
-	}
-
-	return plaintext, nil
+	return mac_sign[:SIGNATURE_SIZE]
 }
