@@ -17,7 +17,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"errors"
-	//"fmt"
+	"hash"
 )
 
 const (
@@ -42,7 +42,6 @@ func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
 	ciphertext_len := len(ciphertext)
 	ciphertext_end := ciphertext_len - SIGNATURE_SIZE
 	plaintext_len := ciphertext_end - INITIALIZATION_VECTOR_SIZE
-	//fmt.Printf("len ciphertext_len = %d, plaintext_len = %d\n", ciphertext_len, plaintext_len)
 	if plaintext_len < 0 {
 		return nil, errors.New("plaintext_len < 0")
 	}
@@ -53,17 +52,16 @@ func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
 	var plaintext []byte = make([]byte, plaintext_len)
 	add_iv_counter_byte := true
 
-	mac := hmac.New(sha1.New, c.EKey)
+	var mac hash.Hash
 	for ciphertext_begin, plaintext_begin := INITIALIZATION_VECTOR_SIZE, 0; ciphertext_begin < ciphertext_end; {
-		mac.Reset()
-		pad := mac.Sum(iv)
-		//fmt.Printf("%x\n", pad)
+		mac = hmac.New(sha1.New, c.EKey)
+		mac.Write(iv)
+		pad := mac.Sum(nil)
 
 		for i := 0; i < BLOCK_SIZE && ciphertext_begin != ciphertext_end; i++ {
 			plaintext[plaintext_begin] = byte(ciphertext[ciphertext_begin] ^ pad[i])
 			plaintext_begin++
 			ciphertext_begin++
-			//fmt.Printf("%x\n", plaintext)
 		}
 
 		if !add_iv_counter_byte {
@@ -85,38 +83,13 @@ func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
 	// or ciphertext.
 	mac = hmac.New(sha1.New, c.IKey)
 	mac.Write(plaintext)
-	mac.Write(ciphertext[0:INITIALIZATION_VECTOR_SIZE])
+	mac.Write(ciphertext[:INITIALIZATION_VECTOR_SIZE])
 	mac_sign := mac.Sum(nil)
 
-	computedSignature := mac_sign[0:SIGNATURE_SIZE]
-	signature := ciphertext[ciphertext_end:ciphertext_len]
-	if !hmac.Equal(computedSignature, signature) {
+	computed_sign := mac_sign[:SIGNATURE_SIZE]
+	sign := ciphertext[ciphertext_end:ciphertext_len]
+	if !hmac.Equal(computed_sign, sign) {
 		return plaintext, errors.New("computedSignature != signature")
-	}
-
-	return plaintext, nil
-}
-
-func (c *Crypto) Decrypt2(ciphertext []byte) ([]byte, error) {
-	ciphertext_len := len(ciphertext)
-	ciphertext_end := ciphertext_len - SIGNATURE_SIZE
-	plaintext_len := ciphertext_end - INITIALIZATION_VECTOR_SIZE
-
-	iv, ciphertext, sig := ciphertext[0:INITIALIZATION_VECTOR_SIZE], ciphertext[INITIALIZATION_VECTOR_SIZE:ciphertext_end], ciphertext[ciphertext_end:ciphertext_len]
-
-	var plaintext []byte = make([]byte, plaintext_len)
-	mac := hmac.New(sha1.New, c.EKey)
-	pad := mac.Sum(iv)
-	for i := 0; i < plaintext_len; i++ {
-		plaintext[i] = byte(ciphertext[i] ^ pad[i])
-	}
-
-	mac = hmac.New(sha1.New, c.IKey)
-	mac.Write(plaintext)
-	conf_sig := mac.Sum(iv)
-
-	if !hmac.Equal(sig, conf_sig) {
-		return plaintext, errors.New("sig != conf_sig")
 	}
 
 	return plaintext, nil

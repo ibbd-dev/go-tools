@@ -1,3 +1,8 @@
+# 使用hmac-sha1进行加解密
+
+## 使用
+
+```go
 package main
 
 import (
@@ -48,3 +53,8 @@ func main() {
 		fmt.Println("====> OK!")
 	}
 }
+```
+
+## TODO
+
+- 加密
