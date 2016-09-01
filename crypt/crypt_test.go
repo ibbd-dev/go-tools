@@ -1,25 +1,30 @@
 package crypt
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 )
 
 const KEY = "def983c33bab071c8170683747be2e13"
 
 func TestCrypt(t *testing.T) {
-	Init(KEY)
+	crypto := &Crypt{}
+	crypto.Init(KEY)
 	fmt.Println("==========>")
 	hello := "this is chinese!sldfkjsldfjsdklf sldkfjskdjflsdkjfls dfsdfjskdjf sjflskdjeworuiwekslfnsakjeoqiriflaksdnhgjrihginak"
-	res, err := EncryptBase64([]byte(hello))
+	res, err := crypto.EncryptBase64([]byte(hello))
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(res)
 	fmt.Println("---------->")
 
-	res2, err := DecryptBase64(res)
+	res2, err := crypto.DecryptBase64(res)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,17 +36,18 @@ func TestCrypt(t *testing.T) {
 }
 
 func TestCrypt2(t *testing.T) {
-	Init(KEY)
+	crypto := &Crypt{}
+	crypto.Init(KEY)
 	fmt.Println("==========>")
 	hello := "=====2(*^98934(*&9))this is chinese!sldfkjsldfjsdklf sldkfjskdjflsdkjfls dfsdfjskdjf sjflskdjeworuiwekslfnsakjeoqiriflaksdnhgjrihginak"
-	res, err := EncryptBase64([]byte(hello))
+	res, err := crypto.EncryptBase64([]byte(hello))
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(res)
 	fmt.Println("---------->")
 
-	res2, err := DecryptBase64(res)
+	res2, err := crypto.DecryptBase64(res)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +80,7 @@ func TestCrypt2(t *testing.T) {
   十六进制密文:
   447DD39BEB3604ACB521D48DEDE870A01577DFC8D293DCC1B351EC72617E54AF
 */
-func TestCrypt3(t *testing.T) {
+func _TestCrypt3(t *testing.T) {
 	tests := []struct {
 		key          string
 		plain_text   string
@@ -98,14 +104,55 @@ func TestCrypt3(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		Init(test.key)
-		cal_encrypt_text, err := Encrypt([]byte(test.plain_text))
+		// 将16进制秘钥转化为字符数组
+		bytes, err := hex.DecodeString(test.key)
 		if err != nil {
 			t.Fatal(err)
 		}
+		bytes_cal := fmt.Sprintf("%x", bytes)
+		if bytes_cal != strings.ToLower(test.key) {
+			t.Fatal(errors.New("bytes != test.key"))
+		}
 
-		fmt.Println(cal_encrypt_text)
-		fmt.Println(test.encrypt_text)
+		crypto := &Crypt{}
+		crypto.SetKey(bytes)
+
+		// 将16进制密文转化为字符数组
+		crypt_bytes, err := hex.DecodeString(test.encrypt_text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		crypt_bytes_cal := fmt.Sprintf("%x", crypt_bytes)
+		println(len(crypt_bytes))
+		if crypt_bytes_cal != strings.ToLower(test.encrypt_text) {
+			t.Fatal(errors.New("crypt_bytes != test.encrypt_text"))
+		}
+
+		// 解密
+		block, err := aes.NewCipher(bytes)
+		if err != nil {
+			panic("aes.NewCipher: " + err.Error())
+		}
+
+		iv := crypt_bytes[:aes.BlockSize]
+		decryptText := crypt_bytes[aes.BlockSize:]
+		fmt.Printf("blocksize: %d\n", aes.BlockSize)
+
+		mode := cipher.NewCBCDecrypter(block, iv)
+		mode.CryptBlocks(decryptText, decryptText)
+
+		fmt.Println(decryptText)
+		fmt.Printf("%x\n", decryptText)
+		fmt.Printf("%s\n", string(decryptText))
+
+		// 解密
+		//cal_plain_text, err := crypto.Decrypt(crypt_bytes)
+		//if err != nil {
+		//t.Fatal(err)
+		//}
+
+		//fmt.Println(cal_plain_text)
+		//fmt.Println(test.plain_text)
 	}
 
 }

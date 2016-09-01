@@ -11,48 +11,60 @@ import (
 	"encoding/base64"
 )
 
-var (
+type Crypt struct {
 	key       []byte // 加密秘钥
 	block     cipher.Block
 	blockSize int
-)
+}
+
+func New(key string) *Crypt {
+	c := &Crypt{}
+	c.SetKey([]byte(key))
+	return c
+}
 
 // 初始化
-func Init(key_str string) {
+func (c *Crypt) Init(key string) {
+	c.SetKey([]byte(key))
+}
+
+// 设置key
+func (c *Crypt) SetKey(key []byte) {
 	var err error
-	key = []byte(key_str)
-	block, err = aes.NewCipher(key)
+	c.key = key
+	c.block, err = aes.NewCipher(key)
 	if err != nil {
 		panic(err)
 	}
 
-	blockSize = block.BlockSize()
+	c.blockSize = c.block.BlockSize()
 }
 
 // 将字符串加密，并转化为base64编码
-func EncryptBase64(str []byte) (string, error) {
-	result, err := Encrypt(str)
+func (c *Crypt) EncryptBase64(str []byte) (string, error) {
+	result, err := c.Encrypt(str)
 	if err != nil {
 		return "", err
 	}
 
-	return base64.URLEncoding.EncodeToString(result), nil
+	return base64.RawStdEncoding.EncodeToString(result), nil
 }
 
 // 将base64编码的字符串解密
-func DecryptBase64(str string) ([]byte, error) {
-	result, err := base64.URLEncoding.DecodeString(str)
+func (c *Crypt) DecryptBase64(str string) ([]byte, error) {
+	result, err := base64.RawStdEncoding.DecodeString(str)
 	if err != nil {
 		return nil, err
 	}
 
-	return Decrypt(result)
+	return c.Decrypt(result)
 }
 
-func Encrypt(origData []byte) ([]byte, error) {
-	origData = PKCS5Padding(origData, blockSize)
-	// origData = ZeroPadding(origData, block.BlockSize())
-	blockMode := cipher.NewCBCEncrypter(block, key[:blockSize])
+// 加密
+func (c *Crypt) Encrypt(origData []byte) ([]byte, error) {
+	origData = pkcs5Padding(origData, c.blockSize)
+	// origData = ZeroPadding(origData, c.block.BlockSize())
+	blockMode := cipher.NewCBCEncrypter(c.block, c.key[:c.blockSize])
 	crypted := make([]byte, len(origData))
 	// 根据CryptBlocks方法的说明，如下方式初始化crypted也可以
 	// crypted := origData
@@ -60,38 +72,43 @@ func Encrypt(origData []byte) ([]byte, error) {
 	return crypted, nil
 }
 
-func Decrypt(crypted []byte) ([]byte, error) {
-	//blockSize := block.BlockSize()
-	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
+// 解密
+func (c *Crypt) Decrypt(crypted []byte) ([]byte, error) {
+	//c.blockSize := c.block.BlockSize()
+	blockMode := cipher.NewCBCDecrypter(c.block, c.key[:c.blockSize])
 	origData := make([]byte, len(crypted))
 	// origData := crypted
 	blockMode.CryptBlocks(origData, crypted)
-	origData = PKCS5UnPadding(origData)
+	origData = pkcs5UnPadding(origData)
 	// origData = ZeroUnPadding(origData)
 	return origData, nil
 }
 
-func ZeroPadding(ciphertext []byte, blockSize int) []byte {
+func zeroPadding(ciphertext []byte, blockSize int) []byte {
 	padding := blockSize - len(ciphertext)%blockSize
 	padtext := bytes.Repeat([]byte{0}, padding)
 	return append(ciphertext, padtext...)
 }
 
-func ZeroUnPadding(origData []byte) []byte {
+func zeroUnPadding(origData []byte) []byte {
 	length := len(origData)
 	unpadding := int(origData[length-1])
 	return origData[:(length - unpadding)]
 }
 
-func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
+func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
 	padding := blockSize - len(ciphertext)%blockSize
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(ciphertext, padtext...)
 }
 
-func PKCS5UnPadding(origData []byte) []byte {
+func pkcs5UnPadding(origData []byte) []byte {
 	length := len(origData)
 	// 去掉最后一个字节 unpadding 次
+	//print("pkcs5UnPadding: ")
+	//println(length)
 	unpadding := int(origData[length-1])
+	//println(unpadding)
+	//print("=== ")
 	return origData[:(length - unpadding)]
 }
