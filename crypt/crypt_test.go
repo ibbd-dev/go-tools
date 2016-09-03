@@ -39,7 +39,7 @@ func TestCrypt2(t *testing.T) {
 	crypto := &Crypt{}
 	crypto.Init(KEY)
 	fmt.Println("==========>")
-	hello := "=====2(*^98934(*&9))this is chinese!sldfkjsldfjsdklf sldkfjskdjflsdkjfls dfsdfjskdjf sjflskdjeworuiwekslfnsakjeoqiriflaksdnhgjrihginak"
+	hello := "=====2(*^98934(*&9))is is chinese!sldfkjsldfjsdklf sldkfjskdjflsdkjfls dfsdfjskdjf sjflskdjeworuiwekslfnsakjeoqiriflaksdnhgjrihginak"
 	res, err := crypto.EncryptBase64([]byte(hello))
 	if err != nil {
 		t.Fatal(err)

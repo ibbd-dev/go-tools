@@ -47,12 +47,12 @@ func (c *Crypt) EncryptBase64(str []byte) (string, error) {
 		return "", err
 	}
 
-	return base64.RawStdEncoding.EncodeToString(result), nil
+	return base64.RawURLEncoding.EncodeToString(result), nil
 }
 
 // 将base64编码的字符串解密
 func (c *Crypt) DecryptBase64(str string) ([]byte, error) {
-	result, err := base64.RawStdEncoding.DecodeString(str)
+	result, err := base64.RawURLEncoding.DecodeString(str)
 	if err != nil {
 		return nil, err
 	}
