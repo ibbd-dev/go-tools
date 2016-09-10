@@ -119,31 +119,42 @@ func (lf *Logfile) SetLevel(level Priority) {
 }
 
 // 写入等级类数据
+// 异步执行
 func (lf *Logfile) WriteLevelMsg(msg string, log_level Priority) error {
 	if log_level >= lf.Level && log_level > LEVEL_ALL && log_level < LEVEL_OFF {
 		new_msg := "[" + level_title[log_level] + "]" + " " + msg
-		return lf.Write(new_msg)
+		go lf.Write(new_msg)
 	}
 	return nil
 }
 
 // 写入json数据
+// 异步执行
 func (lf *Logfile) WriteJson(data_type string, data interface{}) error {
-	pack_data := &JsonData{
-		Time: time.Now(),
-		Type: data_type,
-		Data: data,
-	}
+	go func() {
+		pack_data := &JsonData{
+			Time: time.Now(),
+			Type: data_type,
+			Data: data,
+		}
 
-	bts, err := json.Marshal(pack_data)
-	if err != nil {
-		return err
-	}
+		bts, err := json.Marshal(pack_data)
+		if err != nil {
+			_log := GetAppLogfile(LEVEL_ERROR)
+			_log.WriteLevelMsg("json.Marshal in writeJson", LEVEL_ERROR)
+		}
 
-	if lf.is_json == false {
-		lf.is_json = true
-	}
-	return lf.Write(string(bts))
+		if lf.is_json == false {
+			lf.is_json = true
+		}
+		err = lf.Write(string(bts))
+		if err != nil {
+			_log := GetAppLogfile(LEVEL_ERROR)
+			_log.WriteLevelMsg(string(bts), LEVEL_ERROR)
+		}
+	}()
+
+	return nil
 }
 
 func (lf *Logfile) Close() {
