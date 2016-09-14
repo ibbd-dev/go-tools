@@ -17,6 +17,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"errors"
+	//"fmt"
 	"hash"
 )
 
@@ -58,6 +59,7 @@ func (c *Crypto) Decrypt(ciphertext []byte) ([]byte, error) {
 	}
 
 	iv := ciphertext[0:INITIALIZATION_VECTOR_SIZE]
+	//fmt.Println(iv)
 
 	// Step 2. recover clear text
 	var plaintext []byte = make([]byte, plaintext_len)

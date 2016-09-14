@@ -33,6 +33,12 @@ func TestDecode(t *testing.T) {
 			ikey:         "czyr0wPXEEBT2ORprTjoNo7ZYqxkJiA4",
 			encrypt_text: "OUXiC1YBAABTM3Vdehl8FfbevGnCPceKe1G07A",
 		},
+		{
+			plain_int:    88888,
+			ekey:         "54MPDbYaVicfYPdjQOKsXfoq4mqVmKxS",
+			ikey:         "czyr0wPXEEBT2ORprTjoNo7ZYqxkJiA4",
+			encrypt_text: "B-98KFcBAABlQTk1bh0WK6AjN3nNlrxZvS9peA",
+		},
 	}
 
 	for _, test := range tests {
@@ -46,7 +52,7 @@ func hmac_sha1(t *testing.T, plain_int int, ekey, ikey, encrypt_text string) {
 		IKey: []byte(ikey),
 	}
 
-	unbase64_text, err := base64.RawStdEncoding.DecodeString(encrypt_text)
+	unbase64_text, err := base64.RawURLEncoding.DecodeString(encrypt_text)
 	fmt.Printf("encrypt_text = %s len = %d\n", encrypt_text, len(encrypt_text))
 	fmt.Printf("unbase64_encrypt_text = %x len = %d\n", unbase64_text, len(unbase64_text))
 	if err != nil {

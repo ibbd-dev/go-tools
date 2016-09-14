@@ -31,7 +31,7 @@ func main() {
 		EKey: []byte(test.ekey),
 		IKey: []byte(test.ikey),
 	}
-	unbase64_text, err := base64.RawStdEncoding.DecodeString(test.encrypt_text)
+	unbase64_text, err := base64.RawURLEncoding.DecodeString(test.encrypt_text)
 	if err != nil {
 		//TODO
 	}

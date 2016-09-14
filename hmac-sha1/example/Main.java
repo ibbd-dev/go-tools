@@ -20,11 +20,14 @@ public class Main {
 
     public static void main(String args[]) throws Exception {
         // 加密key
+        //String encKeyStr = "54MPDbYaVicfYPdjQOKsXfoq4mqVmKxS";
         String encKeyStr = "54MPDbYaVicfYPdjQOKsXfoq4mqVmKxS";
         // 签名key
+        //String signKeyStr = "czyr0wPXEEBT2ORprTjoNo7ZYqxkJiA4";
         String signKeyStr = "czyr0wPXEEBT2ORprTjoNo7ZYqxkJiA4";
         // 加密后的价格为
-        String price1 = "mrvD2lYBAABjMC4gJjNNVBVwlIbbjjpAgyIudg";
+        //String price1 = "mrvD2lYBAABjMC4gJjNNVBVwlIbbjjpAgyIudg";
+        String price1 = "B-98KFcBAABlQTk1bh0WK6AjN3nNlrxZvS9peA";
 
         long price2 = decryptWinPrice(price1,encKeyStr, signKeyStr);
         System.out.println("解密后的价格为：" + price2);
