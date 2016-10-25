@@ -17,9 +17,6 @@ func main() {
 		println("===>", time.Now().Format("2006-01-02 03:04:05"))
 	}, 10*time.Second)
 
-	Start()
-	Start()
-
 	time.Sleep(time.Second * 30)
 }
 ```
