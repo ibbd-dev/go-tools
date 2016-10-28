@@ -108,7 +108,7 @@ func (lf *Logfile) Write(msg string) error {
 
 	lf.write_mutex.Lock()
 	lf.logger.Println(msg)
-	lf.write_mutex.Unlock()
+	defer lf.write_mutex.Unlock()
 
 	return nil
 }

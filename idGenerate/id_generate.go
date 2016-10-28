@@ -13,14 +13,14 @@ import (
 
 var (
 	// ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-
-	base64_table string = "wxyz01ABCDIJKLMNOlmn456EFGHPQRSZabcdefgTUVWXYhijopq_rstuv23k789-"
+	base64Table string = "wxyz01ABCDIJKLMNOlmn456EFGHPQRSZabcdefgTUVWXYhijopq_rstuv23k789-"
 
 	// ID的前缀
-	id_prefix string = "XY"
+	idPrefix string = "XY"
 
 	// 当前的序列号
 	// 初始值随机生成, 然后顺序加1
-	curr_index int64
+	currIndex int64
 
 	mutex sync.Mutex
 )
@@ -41,42 +41,42 @@ const (
 // 初始化, 可以设置特殊的前缀字符串
 // @param string prefix 最后生成的随机字符串的前缀
 func Init(prefix string) {
-	id_prefix = prefix
+	idPrefix = prefix
 }
 
 // 获取一个ID
 func NextId() string {
 	var (
-		nano_time, rand_int  int64
-		time_str, rand_str   string
-		time_code, rand_code int64
-		code                 byte
+		nanoTime, randInt  int64
+		timeStr, randStr   string
+		timeCode, randCode int64
+		code               byte
 	)
 
 	// 时间字符串
-	nano_time = time.Now().UnixNano() - BASE_NANO
-	time_str, time_code = int64_to_str(nano_time, 10)
+	nanoTime = time.Now().UnixNano() - BASE_NANO
+	timeStr, timeCode = int64ToStr(nanoTime, 10)
 
 	// 获取下一个随机值
 	mutex.Lock()
-	curr_index++
-	if curr_index >= ID_RAND_MAX {
-		curr_index = 0
+	currIndex++
+	if currIndex >= ID_RAND_MAX {
+		currIndex = 0
 	}
-	rand_int = curr_index
+	randInt = currIndex
 	mutex.Unlock()
 
 	// 随机字符串
-	rand_str, rand_code = int64_to_str(rand_int, ID_RAND_LEN)
+	randStr, randCode = int64ToStr(randInt, ID_RAND_LEN)
 
 	// 计算校验码
-	code = base64_table[(time_code+rand_code)&WORD_MASK]
+	code = base64Table[(timeCode+randCode)&WORD_MASK]
 
-	return id_prefix + time_str + rand_str + string(code)
+	return idPrefix + timeStr + randStr + string(code)
 }
 
 // 将uint64转化为字符串
-func int64_to_str(key int64, len uint8) (string, int64) {
+func int64ToStr(key int64, len uint8) (string, int64) {
 	var (
 		bytes [10]byte
 		mask  int64
@@ -86,7 +86,7 @@ func int64_to_str(key int64, len uint8) (string, int64) {
 
 	for ; i < len; i++ {
 		mask = key & WORD_MASK
-		bytes[len-i-1] = base64_table[mask]
+		bytes[len-i-1] = base64Table[mask]
 		key = key >> WORD_BITS
 		code = (code + mask) & WORD_MASK
 	}
