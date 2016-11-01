@@ -40,3 +40,12 @@ func TestLogfile_WriteJson(t *testing.T) {
 	_ = lf2.WriteJson("bid", data)
 	_ = lf.WriteJson("click", data)
 }
+
+func BenchmarkWrite(b *testing.B) {
+	lf := GetAppLogfile(LEVEL_INFO)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = lf.WriteLevelMsg("hello world", LEVEL_WARN)
+		}
+	})
+}
