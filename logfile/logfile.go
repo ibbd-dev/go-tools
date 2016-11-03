@@ -27,6 +27,9 @@ const (
 	LEVEL_ERROR
 	LEVEL_FATAL
 	LEVEL_OFF
+
+	// 文件Flag
+	fileFlag = os.O_WRONLY | os.O_CREATE | os.O_APPEND
 )
 
 var (
@@ -79,7 +82,7 @@ func (lf *Logfile) switchFile() error {
 	lf.log_filename = lf.Filename + "." + curr_minute
 
 	var err error
-	lf.f, err = os.OpenFile(lf.log_filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	lf.f, err = os.OpenFile(lf.log_filename, fileFlag, 0666)
 	if err != nil {
 		return err
 	}
