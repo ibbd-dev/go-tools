@@ -24,6 +24,21 @@ func TestCrypt(t *testing.T) {
 	fmt.Println(res)
 	fmt.Println("---------->")
 
+	_, err = crypto.DecryptBase64("hello")
+	if err == nil {
+		t.Fatalf("err DecryptBase64")
+	}
+
+	_, err = crypto.DecryptBase64(res + "==helo")
+	if err == nil {
+		t.Fatalf("err DecryptBase64")
+	}
+
+	_, err = crypto.DecryptBase64("")
+	if err == nil {
+		t.Fatalf("err DecryptBase64")
+	}
+
 	res2, err := crypto.DecryptBase64(res)
 	if err != nil {
 		t.Fatal(err)

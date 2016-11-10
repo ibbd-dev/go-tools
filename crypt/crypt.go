@@ -9,6 +9,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
+	"errors"
 )
 
 type Crypt struct {
@@ -79,8 +80,15 @@ func (c *Crypt) Decrypt(crypted []byte) ([]byte, error) {
 	origData := make([]byte, len(crypted))
 	// origData := crypted
 	blockMode.CryptBlocks(origData, crypted)
-	origData = pkcs5UnPadding(origData)
+	if len(origData) < 1 {
+		return nil, errors.New("Decrypt: len(origData) < 1")
+	}
+
+	origData, err := pkcs5UnPadding(origData)
 	// origData = ZeroUnPadding(origData)
+	if err != nil {
+		return nil, err
+	}
 	return origData, nil
 }
 
@@ -102,7 +110,7 @@ func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
 	return append(ciphertext, padtext...)
 }
 
-func pkcs5UnPadding(origData []byte) []byte {
+func pkcs5UnPadding(origData []byte) ([]byte, error) {
 	length := len(origData)
 	// 去掉最后一个字节 unpadding 次
 	//print("pkcs5UnPadding: ")
@@ -110,5 +118,8 @@ func pkcs5UnPadding(origData []byte) []byte {
 	unpadding := int(origData[length-1])
 	//println(unpadding)
 	//print("=== ")
-	return origData[:(length - unpadding)]
+	if length < unpadding {
+		return nil, errors.New("pkcs5UnPadding: index out of range")
+	}
+	return origData[:(length - unpadding)], nil
 }
