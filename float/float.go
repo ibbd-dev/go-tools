@@ -6,23 +6,23 @@ const (
 )
 
 // Float32Zero 判断是否为0
-func Float32Zero(val float32) {
+func Float32Zero(val float32) bool {
 	return val > -deviation32 && val < deviation32
 }
 
 // Float32Eq 判断两个数是否相等
-func Float32Eq(val1, val2 float32) {
+func Float32Eq(val1, val2 float32) bool {
 	val := val1 - val2
 	return val > -deviation32 && val < deviation32
 }
 
 // Float64Zero 判断是否为0
-func Float64Zero(val float32) {
+func Float64Zero(val float64) bool {
 	return val > -deviation64 && val < deviation64
 }
 
 // Float64Eq 判断两个数是否相等
-func Float64Eq(val1, val2 float32) {
+func Float64Eq(val1, val2 float64) bool {
 	val := val1 - val2
 	return val > -deviation64 && val < deviation64
 }
