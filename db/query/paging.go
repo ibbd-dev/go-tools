@@ -50,6 +50,12 @@ func (p *Paging) Reset() {
 	p.currentPage = 0
 }
 
+// SetDB 设置操作对象
+// 分页读数据的时候，有时链接太长的时间会出问题
+func (p *Paging) SetDB(db *sql.DB) {
+	p.db = db
+}
+
 // HasNextPage 判断是否存在下一页
 func (p *Paging) HasNextPage() bool {
 	return p.currentPage < p.pagesTotal
