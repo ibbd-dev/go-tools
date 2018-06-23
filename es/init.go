@@ -1,6 +1,7 @@
 package es
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -18,10 +19,6 @@ type Client struct {
 	IndexName string
 	DocType   string
 
-	// import
-	DeleteIndex bool                   // 是否删除原索引
-	Mapping     map[string]interface{} // mapping 文件
-
 	// private
 	page         int // 当前页数
 	count        int // 计数变量
@@ -31,13 +28,17 @@ type Client struct {
 	sResTotal    int64 // 搜索结果的总量
 	cursor       int   // 游标
 	rows         []map[string]interface{}
+	ctx          context.Context
+	query        elastic.Query
 }
 
 func NewClient(host string, port int, indexName, docType string) (c *Client, err error) {
 	c = &Client{
-		Host:     host,
-		Port:     port,
-		BulkSize: 1000,
+		Host:      host,
+		Port:      port,
+		IndexName: indexName,
+		DocType:   docType,
+		BulkSize:  1000,
 	}
 
 	c.es, err = elastic.NewClient(
@@ -48,6 +49,9 @@ func NewClient(host string, port int, indexName, docType string) (c *Client, err
 	)
 
 	return c, err
+}
+func (c *Client) SetDebug(debug bool) {
+	c.Debug = debug
 }
 func (c *Client) SetLimit(limit int) {
 	c.Limit = limit

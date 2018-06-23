@@ -12,7 +12,7 @@ func (c *Client) ImportInit(deleteIndex bool, mapping map[string]interface{}) er
 	ctx := context.Background()
 	exists, err := c.es.IndexExists(c.IndexName).Do(ctx)
 	if err != nil {
-		panic(fmt.Errorf("check index exists error: %v", err.Error()))
+		return fmt.Errorf("check index exists error: %v", err.Error())
 	}
 
 	if exists {
@@ -52,7 +52,7 @@ func (c *Client) ImportInit(deleteIndex bool, mapping map[string]interface{}) er
 }
 
 // BulkAdd 增加一行记录
-func (c *Client) BulkAdd(row map[string]interface{}) error {
+func (c *Client) BulkAdd(row interface{}) error {
 	req := elastic.NewBulkIndexRequest().Index(c.IndexName).Type(c.DocType).Doc(row)
 	c.bulk.Add(req)
 
@@ -64,6 +64,7 @@ func (c *Client) BulkAdd(row map[string]interface{}) error {
 }
 
 // BulkImport 批量导入
+// 注意：外部最后需要调用一次这个方法
 func (c *Client) BulkImport() error {
 	// 执行导入
 	ctx := context.Background()
@@ -81,6 +82,8 @@ func (c *Client) BulkImport() error {
 			errCount++
 		}
 	}
-	fmt.Printf("向%s写入的数据量：%d，异常：%d\n", c.IndexName, c.count, errCount)
+	if c.Debug {
+		fmt.Printf("向%s写入的数据量：%d，异常：%d\n", c.IndexName, c.count, errCount)
+	}
 	return nil
 }

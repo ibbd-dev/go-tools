@@ -11,8 +11,8 @@ import (
 
 // SearchInit 搜索初始化
 func (c *Client) SearchInit(query elastic.Query) error {
-	ctx := context.Background()
-	exists, err := c.es.IndexExists(c.IndexName).Do(ctx)
+	c.ctx = context.Background()
+	exists, err := c.es.IndexExists(c.IndexName).Do(c.ctx)
 	if err != nil {
 		return fmt.Errorf("check index exists error: %v", err.Error())
 	}
@@ -21,34 +21,49 @@ func (c *Client) SearchInit(query elastic.Query) error {
 		return fmt.Errorf("index %s is not exists", c.IndexName)
 	}
 
-	c.searchResult, err = c.es.Search(c.IndexName).Query(query).Size(c.BulkSize).Do(ctx)
+	searchResult, err := c.es.Search(c.IndexName).Query(query).Size(1).Do(c.ctx)
 	if err != nil {
 		return fmt.Errorf("search do error: %v", err.Error())
 	}
 
-	c.sResTotal = c.searchResult.Hits.TotalHits
-	fmt.Printf("search research total: %d\n", c.sResTotal)
+	c.sResTotal = searchResult.Hits.TotalHits
+	if c.Debug {
+		fmt.Printf("search research total: %d\n", c.sResTotal)
+	}
 	return nil
 }
 
 // ReadRows 读取一个批量的数据
 func (c *Client) ReadRows() (rows []map[string]interface{}, err error) {
 	if int64(c.count) > c.sResTotal {
+		if c.Debug {
+			fmt.Printf("count > res total: %+v\n", c)
+		}
 		return rows, io.EOF
 	}
 	if c.Limit > 0 && c.count >= c.Limit {
 		return rows, io.EOF
 	}
 
-	return c.bulkRead()
+	rows, err = c.bulkRead()
+	c.count += len(rows)
+	return rows, err
 }
 
 // Read 读取一行数据
 func (c *Client) Read() (row map[string]interface{}, err error) {
 	if int64(c.count) > c.sResTotal {
+		if c.Debug {
+			c.rows = nil
+			fmt.Printf("count > res total: %+v\n", c)
+		}
 		return nil, io.EOF
 	}
 	if c.Limit > 0 && c.count >= c.Limit {
+		if c.Debug {
+			c.rows = nil
+			fmt.Printf("limit over: %+v\n", c)
+		}
 		return nil, io.EOF
 	}
 
@@ -62,29 +77,38 @@ func (c *Client) Read() (row map[string]interface{}, err error) {
 	}
 
 	c.cursor++
+	c.count++
 	return c.rows[c.cursor-1], nil
 }
 
 func (c *Client) bulkRead() (rows []map[string]interface{}, err error) {
+	// 分页获取数据
+	var scrollId string
 	if c.page > 0 {
-		// 下一页
-		c.searchResult, err = func(scrollId string) (*elastic.SearchResult, error) {
-			c.page++
-			fmt.Printf("search page: %d\n", c.page)
-			ctx := context.Background()
-			return c.es.Scroll(c.IndexName).ScrollId(scrollId).Do(ctx)
-		}(c.searchResult.ScrollId)
-		if err != nil {
-			return nil, fmt.Errorf("next scroll error: %s", err.Error())
+		scrollId = c.searchResult.ScrollId
+	}
+	c.searchResult, err = func(scrollId string) (*elastic.SearchResult, error) {
+		if c.Debug {
+			fmt.Printf("search scroll next page: %d\n", c.page)
 		}
+		return c.es.Scroll(c.IndexName).ScrollId(scrollId).Query(c.query).Size(c.BulkSize).Do(c.ctx)
+	}(scrollId)
+
+	if err == io.EOF { // 没有数据了
+		return nil, err
+	} else if err != nil {
+		return nil, fmt.Errorf("next scroll error: %s", err.Error())
 	}
 
+	c.page++
+	if c.Debug {
+		fmt.Printf("search result page count: %d\n", len(c.searchResult.Hits.Hits))
+	}
+
+	// 解释数据
 	for i, hit := range c.searchResult.Hits.Hits {
 		if i == 0 && c.Debug {
 			fmt.Printf("[debug]row[0] = %s\n", string(*hit.Source))
-		}
-		if c.Limit > 0 && c.count > c.Limit {
-			return rows, io.EOF
 		}
 
 		var row = make(map[string]interface{})
@@ -94,7 +118,6 @@ func (c *Client) bulkRead() (rows []map[string]interface{}, err error) {
 		}
 
 		rows = append(rows, row)
-		c.count += 1
 	}
 
 	return rows, nil
